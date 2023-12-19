@@ -10,10 +10,53 @@ class Auth extends CI_Controller
    }
    public function index()
    {
-      $data['title'] = "Login";
-      $this->load->view('templates/auth_header', $data);
-      $this->load->view('auth/login');
-      $this->load->view('templates/auth_footer');
+      $this->form_validation->set_rules('email', 'Email', 'trim|valid_email|required');
+      $this->form_validation->set_rules('password', 'Password', 'trim|required');
+      if ($this->form_validation->run() == false) {
+         $data['title'] = "Login";
+         $this->load->view('templates/auth_header', $data);
+         $this->load->view('auth/login');
+         $this->load->view('templates/auth_footer');
+      } else {
+         // validation success
+         $this->_login();
+      }
+   }
+
+   private function _login()
+   {
+      $email = $this->input->post('email');
+      $password = $this->input->post('password');
+
+      $user = $this->db->get_where('user', ['email' => $email])->row_array();
+
+      if ($user) {
+         // if user exists
+         if ($user['is_active'] == 1) {
+            // if user active
+            if (password_verify($password, $user['password'])) {
+               // check password
+               $data = [
+                  'email' => $user['email'],
+                  'role_id' => $user['role_id']
+               ];
+               $this->session->set_userdata($data);
+               redirect('user');
+            } else {
+               // if password is wrong 
+               $this->session->set_flashdata('message', '<div class="alert alert-danger text-center" role="alert">Wrong Password.!</div>');
+               redirect('auth');
+            }
+         } else {
+            // if user not active
+            $this->session->set_flashdata('message', '<div class="alert alert-danger text-center" role="alert">This email has not been Activated.!</div>');
+            redirect('auth');
+         }
+      } else {
+         // user do not exists
+         $this->session->set_flashdata('message', '<div class="alert alert-danger text-center" role="alert">Email is not Registered.!</div>');
+         redirect('auth');
+      }
    }
    
    public function registration()
@@ -48,7 +91,7 @@ class Auth extends CI_Controller
             'name' => htmlspecialchars($this->input->post('name', true)),
             'email' => htmlspecialchars($this->input->post('email', true)),
             'image' => 'default.jpg',
-            'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT),
+            'password' => password_hash($this->input->post('password1'), PASSWORD_DEFAULT),
             'role_id' => 2,
             'is_active' => 1,
             'date_created' => time()
@@ -58,5 +101,13 @@ class Auth extends CI_Controller
          $this->session->set_flashdata('message', '<div class="alert alert-success text-center" role="alert">Congratulation.~ <br>your account has been created.~<br>Please Login.~</div>');
          redirect('auth');
       }
+   }
+
+   public function logout()
+   {
+      $this->session->unset_userdata('email');
+      $this->session->unset_userdata('role_id');
+      $this->session->set_flashdata('message', '<div class="alert alert-success text-center" role="alert">You have been logged out.~</div>');
+      redirect('auth');
    }
 }
