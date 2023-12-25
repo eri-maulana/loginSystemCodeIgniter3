@@ -19,7 +19,7 @@
 
                         <form class="user" method="post" action="<?= base_url('auth'); ?>">
                            <div class="form-group">
-                              <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address..." value="<?= set_value('email') ?>">
+                              <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address..." value="<?= set_value('email') ?>" autocomplete="on">
                               <?= form_error('email', '<small class="text-danger font-italic pl-3">', '</small>') ?>
                            </div>
                            <div class="form-group">
